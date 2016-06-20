@@ -19,6 +19,7 @@ export default class Post extends React.Component {
 
         this.handleCommentClick = this.handleCommentClick.bind(this);
         this.forceUpdateInfo = this.forceUpdateInfo.bind(this);
+        this.handlePostClick = this.handlePostClick.bind(this);
 
         this.state = {};
     }
@@ -34,6 +35,12 @@ export default class Post extends React.Component {
             type: ActionTypes.RECEIVED_SEARCH,
             results: null
         });
+    }
+    handlePostClick(e) {
+        if (e.altKey) {
+            e.preventDefault();
+            this.props.setUnreadPost();
+        }
     }
     forceUpdateInfo() {
         this.refs.info.forceUpdate();
@@ -192,6 +199,7 @@ export default class Post extends React.Component {
                 <div
                     id={'post_' + post.id}
                     className={'post ' + sameUserClass + ' ' + compactClass + ' ' + rootUser + ' ' + postType + ' ' + currentUserCss + ' ' + shouldHighlightClass + ' ' + systemMessageClass + ' ' + hideControls}
+                    onClick={this.handlePostClick}
                 >
                     <div className={'post__content ' + centerClass}>
                         {profilePicContainer}
@@ -244,5 +252,6 @@ Post.propTypes = {
     previewCollapsed: React.PropTypes.string,
     commentCount: React.PropTypes.number,
     useMilitaryTime: React.PropTypes.bool.isRequired,
-    emojis: React.PropTypes.object.isRequired
+    emojis: React.PropTypes.object.isRequired,
+    setUnreadPost: React.PropTypes.func.isRequired
 };

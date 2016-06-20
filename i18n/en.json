@@ -3476,6 +3476,10 @@
     "translation": "We couldn't save the channel member"
   },
   {
+    "id": "store.sql_channel.set_last_viewed_at.app_error",
+    "translation": "We couldn't set the last viewed at time"
+  },
+  {
     "id": "store.sql_channel.update.app_error",
     "translation": "We couldn't update the channel"
   },

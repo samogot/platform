@@ -8,7 +8,6 @@ import EmojiStore from 'stores/emoji_store.jsx';
 import PreferenceStore from 'stores/preference_store.jsx';
 import UserStore from 'stores/user_store.jsx';
 import PostStore from 'stores/post_store.jsx';
-import ChannelStore from 'stores/channel_store.jsx';
 
 import * as Utils from 'utils/utils.jsx';
 
@@ -37,19 +36,12 @@ export default class PostViewController extends React.Component {
             profiles = Object.assign({}, profiles, UserStore.getDirectProfiles());
         }
 
-        let lastViewed = Number.MAX_VALUE;
-        const member = ChannelStore.getMember(channel.id);
-        if (member != null) {
-            lastViewed = member.last_viewed_at;
-        }
-
         this.state = {
             channel,
             postList: PostStore.getVisiblePosts(channel.id),
             currentUser: UserStore.getCurrentUser(),
             profiles,
             atTop: PostStore.getVisibilityAtTop(channel.id),
-            lastViewed,
             scrollType: ScrollTypes.NEW_MESSAGE,
             displayNameType: PreferenceStore.get(Preferences.CATEGORY_DISPLAY_SETTINGS, 'name_format', 'false'),
             displayPostsInCenter: PreferenceStore.get(Preferences.CATEGORY_DISPLAY_SETTINGS, Preferences.CHANNEL_DISPLAY_MODE, Preferences.CHANNEL_DISPLAY_MODE_DEFAULT) === Preferences.CHANNEL_DISPLAY_MODE_CENTERED,
@@ -135,12 +127,6 @@ export default class PostViewController extends React.Component {
 
             const channel = nextProps.channel;
 
-            let lastViewed = Number.MAX_VALUE;
-            const member = ChannelStore.getMember(channel.id);
-            if (member != null) {
-                lastViewed = member.last_viewed_at;
-            }
-
             let profiles = UserStore.getProfiles();
             if (channel && channel.type === Constants.DM_CHANNEL) {
                 profiles = Object.assign({}, profiles, UserStore.getDirectProfiles());
@@ -148,7 +134,6 @@ export default class PostViewController extends React.Component {
 
             this.setState({
                 channel,
-                lastViewed,
                 profiles: JSON.parse(JSON.stringify(profiles)),
                 postList: JSON.parse(JSON.stringify(PostStore.getVisiblePosts(channel.id))),
                 displayNameType: PreferenceStore.get(Preferences.CATEGORY_DISPLAY_SETTINGS, 'name_format', 'false'),
@@ -212,10 +197,6 @@ export default class PostViewController extends React.Component {
         }
 
         if (nextState.useMilitaryTime !== this.state.useMilitaryTime) {
-            return true;
-        }
-
-        if (nextState.lastViewed !== this.state.lastViewed) {
             return true;
         }
 

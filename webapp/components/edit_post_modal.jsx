@@ -152,6 +152,12 @@ class EditPostModal extends React.Component {
             }
         });
 
+        $(ReactDOM.findDOMNode(this.refs.modal)).on('keydown', (e) => {
+            if (e.which === Constants.KeyCodes.ESCAPE) {
+                e.stopPropagation();
+            }
+        });
+
         PostStore.addEditPostListener(this.handleEditPostEvent);
         PreferenceStore.addChangeListener(this.onPreferenceChange);
     }

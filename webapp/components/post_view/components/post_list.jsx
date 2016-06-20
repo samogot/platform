@@ -15,6 +15,9 @@ import * as Utils from 'utils/utils.jsx';
 import * as PostUtils from 'utils/post_utils.jsx';
 import DelayedAction from 'utils/delayed_action.jsx';
 
+import ChannelStore from 'stores/channel_store.jsx';
+import * as AsyncClient from 'utils/async_client.jsx';
+
 import Constants from 'utils/constants.jsx';
 const ScrollTypes = Constants.ScrollTypes;
 
@@ -37,6 +40,7 @@ export default class PostList extends React.Component {
         this.handleResize = this.handleResize.bind(this);
         this.scrollToBottom = this.scrollToBottom.bind(this);
         this.scrollToBottomAnimated = this.scrollToBottomAnimated.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
 
         this.jumpToPostNode = null;
         this.wasAtBottom = true;
@@ -50,10 +54,74 @@ export default class PostList extends React.Component {
             this.introText = this.getArchivesIntroMessage();
         }
 
+        let lastViewed = Number.MAX_VALUE;
+        const member = ChannelStore.getMember(props.channel.id);
+        if (member != null) {
+            lastViewed = member.last_viewed_at;
+        }
+
         this.state = {
             isScrolling: false,
-            topPostId: null
+            topPostId: null,
+            lastViewed
         };
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (this.props.channel !== nextProps.channel) {
+            let lastViewed = Number.MAX_VALUE;
+            const member = ChannelStore.getMember(nextProps.channel.id);
+            if (member != null) {
+                lastViewed = member.last_viewed_at;
+            }
+            this.setState({
+                lastViewed
+            });
+        }
+    }
+
+    setUnreadPost(post) {
+        let unreadPosts = 0;
+        let lastViewed = 0;
+        const posts = this.props.postList.posts;
+        if (this.props.currentUser.id === post.user_id || PostUtils.isSystemMessage(post)) {
+            for (const postId in posts) {
+                if (lastViewed < posts[postId].create_at && posts[postId].create_at < post.create_at &&
+                        this.props.currentUser.id !== posts[postId].user_id && !PostUtils.isSystemMessage(posts[postId])) {
+                    lastViewed = posts[postId].create_at;
+                }
+            }
+            lastViewed = lastViewed === 0 ? Number.MAX_VALUE : lastViewed - 1;
+        } else {
+            lastViewed = post.create_at - 1;
+        }
+        for (const postId in posts) {
+            if (posts[postId].create_at < lastViewed) {
+                unreadPosts += 1;
+            }
+        }
+        const member = ChannelStore.getMember(this.props.channel.id);
+        member.last_viewed_at = lastViewed;
+        member.msg_count = this.props.channel.total_msg_count - unreadPosts;
+        member.mention_count = 0;
+        ChannelStore.setChannelMember(member);
+        ChannelStore.setUnreadCount(this.props.channel.id);
+        AsyncClient.setLastViewedAt(lastViewed, this.props.channel.id);
+        this.setState({
+            lastViewed
+        });
+    }
+
+    handleKeyDown(e) {
+        if (e.which === Constants.KeyCodes.ESCAPE && $('.popover.in,.modal.in').length === 0) {
+            e.preventDefault();
+            AsyncClient.updateLastViewedAt();
+            ChannelStore.resetCounts(ChannelStore.getCurrentId());
+            ChannelStore.emitChange();
+            this.setState({
+                lastViewed: Number.MAX_VALUE
+            });
+        }
     }
 
     isAtBottom() {
@@ -268,6 +336,7 @@ export default class PostList extends React.Component {
                     previewCollapsed={this.props.previewsCollapsed}
                     useMilitaryTime={this.props.useMilitaryTime}
                     emojis={this.props.emojis}
+                    setUnreadPost={this.setUnreadPost.bind(this, post)}
                 />
             );
 
@@ -293,8 +362,7 @@ export default class PostList extends React.Component {
             }
 
             if (postUserId !== userId &&
-                    this.props.lastViewed !== 0 &&
-                    post.create_at > this.props.lastViewed &&
+                    post.create_at > this.state.lastViewed &&
                     !renderedLastViewed) {
                 renderedLastViewed = true;
 
@@ -412,10 +480,12 @@ export default class PostList extends React.Component {
         }
 
         window.addEventListener('resize', this.handleResize);
+        window.addEventListener('keydown', this.handleKeyDown);
     }
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.handleResize);
+        window.removeEventListener('keydown', this.handleKeyDown);
         this.scrollStopAction.cancel();
     }
 
@@ -509,10 +579,6 @@ export default class PostList extends React.Component {
     }
 }
 
-PostList.defaultProps = {
-    lastViewed: 0
-};
-
 PostList.propTypes = {
     postList: React.PropTypes.object,
     profiles: React.PropTypes.object,
@@ -523,7 +589,6 @@ PostList.propTypes = {
     postListScrolled: React.PropTypes.func.isRequired,
     showMoreMessagesTop: React.PropTypes.bool,
     showMoreMessagesBottom: React.PropTypes.bool,
-    lastViewed: React.PropTypes.number,
     postsToHighlight: React.PropTypes.object,
     displayNameType: React.PropTypes.string,
     displayPostsInCenter: React.PropTypes.bool,
