@@ -63,7 +63,8 @@ export default class PostList extends React.Component {
         this.state = {
             isScrolling: false,
             topPostId: null,
-            lastViewed
+            lastViewed,
+            ownNewMessage: false
         };
     }
 
@@ -75,40 +76,58 @@ export default class PostList extends React.Component {
                 lastViewed = member.last_viewed_at;
             }
             this.setState({
-                lastViewed
+                lastViewed,
+                ownNewMessage: false
             });
         }
     }
 
     setUnreadPost(post) {
-        let unreadPosts = 0;
         let lastViewed = 0;
+        let ownNewMessage = false;
         const posts = this.props.postList.posts;
         if (this.props.currentUser.id === post.user_id || PostUtils.isSystemMessage(post)) {
             for (const postId in posts) {
-                if (lastViewed < posts[postId].create_at && posts[postId].create_at < post.create_at &&
+                if (lastViewed < posts[postId].create_at &&
                         this.props.currentUser.id !== posts[postId].user_id && !PostUtils.isSystemMessage(posts[postId])) {
                     lastViewed = posts[postId].create_at;
                 }
             }
-            lastViewed = lastViewed === 0 ? Number.MAX_VALUE : lastViewed - 1;
+            if (lastViewed === 0) {
+                lastViewed = Number.MAX_VALUE;
+            } else if (lastViewed > post.create_at) {
+                lastViewed = post.create_at - 1;
+                ownNewMessage = true;
+            } else {
+                lastViewed -= 1;
+            }
         } else {
             lastViewed = post.create_at - 1;
         }
-        for (const postId in posts) {
-            if (posts[postId].create_at < lastViewed) {
-                unreadPosts += 1;
+
+        if (lastViewed === Number.MAX_VALUE) {
+            AsyncClient.updateLastViewedAt();
+            ChannelStore.resetCounts(ChannelStore.getCurrentId());
+            ChannelStore.emitChange();
+        } else {
+            let unreadPosts = 0;
+            for (const postId in posts) {
+                if (posts[postId].create_at < lastViewed) {
+                    unreadPosts += 1;
+                }
             }
+            const member = ChannelStore.getMember(this.props.channel.id);
+            member.last_viewed_at = lastViewed;
+            member.msg_count = this.props.channel.total_msg_count - unreadPosts;
+            member.mention_count = 0;
+            ChannelStore.setChannelMember(member);
+            ChannelStore.setUnreadCount(this.props.channel.id);
+            AsyncClient.setLastViewedAt(lastViewed, this.props.channel.id);
         }
-        const member = ChannelStore.getMember(this.props.channel.id);
-        member.last_viewed_at = lastViewed;
-        member.msg_count = this.props.channel.total_msg_count - unreadPosts;
-        member.mention_count = 0;
-        ChannelStore.setChannelMember(member);
-        ChannelStore.setUnreadCount(this.props.channel.id);
-        AsyncClient.setLastViewedAt(lastViewed, this.props.channel.id);
+
         this.setState({
-            lastViewed
+            lastViewed,
+            ownNewMessage
         });
     }
 
@@ -119,7 +138,8 @@ export default class PostList extends React.Component {
             ChannelStore.resetCounts(ChannelStore.getCurrentId());
             ChannelStore.emitChange();
             this.setState({
-                lastViewed: Number.MAX_VALUE
+                lastViewed: Number.MAX_VALUE,
+                ownNewMessage: false
             });
         }
     }
@@ -361,7 +381,7 @@ export default class PostList extends React.Component {
                 );
             }
 
-            if (postUserId !== userId &&
+            if ((postUserId !== userId || this.state.ownNewMessage) &&
                     post.create_at > this.state.lastViewed &&
                     !renderedLastViewed) {
                 renderedLastViewed = true;
