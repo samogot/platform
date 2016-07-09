@@ -2,7 +2,7 @@
 // See License.txt for license information.
 
 import PostStore from 'stores/post_store.jsx';
-import ChannelStore from 'stores/channel_store.jsx';
+import * as GlobalActions from 'actions/global_actions.jsx';
 
 import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
 
@@ -31,11 +31,7 @@ export default class PendingPostOptions extends React.Component {
             (data) => {
                 AsyncClient.getPosts(post.channel_id);
 
-                var channel = ChannelStore.get(post.channel_id);
-                var member = ChannelStore.getMember(post.channel_id);
-                member.msg_count = channel.total_msg_count;
-                member.last_viewed_at = (new Date()).getTime();
-                ChannelStore.setChannelMember(member);
+                GlobalActions.updateOnScreenLastViewedAt();
 
                 AppDispatcher.handleServerAction({
                     type: ActionTypes.RECEIVED_POST,

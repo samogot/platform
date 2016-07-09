@@ -109,6 +109,9 @@ export default class PostList extends React.Component {
         this.setState({
             isScrolling: false
         });
+        if (window.isActive) {
+            GlobalActions.updateOnScreenLastViewedAt();
+        }
     }
 
     updateFloatingTimestamp() {

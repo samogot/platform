@@ -26,6 +26,7 @@ import en from 'i18n/en.json';
 import * as I18n from 'i18n/i18n.jsx';
 import {trackPage} from 'actions/analytics_actions.jsx';
 import {browserHistory} from 'react-router/es6';
+import $ from 'jquery';
 
 export function emitChannelClickEvent(channel) {
     function userVisitedFakeChannel(chan, success, fail) {
@@ -41,9 +42,9 @@ export function emitChannelClickEvent(channel) {
         );
     }
     function switchToChannel(chan) {
+        updateOnScreenLastViewedAt();
         AsyncClient.getChannels(true);
         AsyncClient.getChannelExtraInfo(chan.id);
-        AsyncClient.updateLastViewedAt(chan.id);
         AsyncClient.getPosts(chan.id);
         trackPage();
 
@@ -67,6 +68,35 @@ export function emitChannelClickEvent(channel) {
         );
     } else {
         switchToChannel(channel);
+    }
+}
+
+export function updateOnScreenLastViewedAt() {
+    let lastViewedPostId;
+    let unreadPosts = 0;
+    const $postList = $('.post-list-holder-by-time:visible');
+    const $postNodes = $postList.find('.post');
+    let i = $postNodes.length;
+    while (i-- > 0) {
+        // Get last post visible on screen at least on 1/3 of its height
+        if ($postNodes.get(i).offsetTop + $postNodes.get(i).offsetHeight / 3 < $postList.get(0).scrollTop + $postList.get(0).offsetHeight) {
+            lastViewedPostId = $postNodes.get(i).id.substr(5);
+            break;
+        }
+        ++unreadPosts;
+    }
+    const channelId = ChannelStore.getCurrentId();
+    const member = ChannelStore.getCurrentMember();
+    if (lastViewedPostId) {
+        const post = PostStore.getPost(channelId, lastViewedPostId);
+        if (member.last_viewed_at < post.create_at) {
+            member.last_viewed_at = post.create_at;
+            member.msg_count = ChannelStore.getCurrent().total_msg_count - unreadPosts;
+            member.mention_count = 0;
+            ChannelStore.setChannelMember(member);
+            ChannelStore.setUnreadCount(channelId);
+            AsyncClient.setLastViewedAt(post.create_at, channelId);
+        }
     }
 }
 

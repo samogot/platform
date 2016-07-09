@@ -11,6 +11,7 @@ import UserStore from 'stores/user_store.jsx';
 import * as PostUtils from 'utils/post_utils.jsx';
 import Constants from 'utils/constants.jsx';
 const ActionTypes = Constants.ActionTypes;
+import * as GlobalActions from 'actions/global_actions.jsx';
 
 import Client from 'utils/web_client.jsx';
 import * as AsyncClient from 'utils/async_client.jsx';
@@ -18,7 +19,7 @@ import * as AsyncClient from 'utils/async_client.jsx';
 export function handleNewPost(post, msg) {
     if (ChannelStore.getCurrentId() === post.channel_id) {
         if (window.isActive) {
-            AsyncClient.updateLastViewedAt();
+            GlobalActions.updateOnScreenLastViewedAt();
         } else {
             AsyncClient.getChannel(post.channel_id);
         }
