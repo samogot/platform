@@ -11,6 +11,8 @@ import * as GlobalActions from 'actions/global_actions.jsx';
 
 import {createChannelIntroMessage} from 'utils/channel_intro_messages.jsx';
 
+import UserStore from 'stores/user_store.jsx';
+
 import * as Utils from 'utils/utils.jsx';
 import * as PostUtils from 'utils/post_utils.jsx';
 import DelayedAction from 'utils/delayed_action.jsx';
@@ -246,15 +248,35 @@ export default class PostList extends React.Component {
             }
 
             let commentCount = 0;
+            let nonOwnCommentsExists = false;
+            let isCommentMention = false;
             let commentRootId;
             if (parentPost) {
                 commentRootId = post.root_id;
             } else {
                 commentRootId = post.id;
             }
-            for (const postId in posts) {
-                if (posts[postId].root_id === commentRootId) {
-                    commentCount += 1;
+            if (commentRootId) {
+                const commentsNotifyLevel = UserStore.getCurrentUser().notify_props.comments || 'never';
+                for (const postId in posts) {
+                    if (posts[postId].root_id === commentRootId) {
+                        commentCount += 1;
+                        if (posts[postId].user_id !== this.props.currentUser.id) {
+                            nonOwnCommentsExists = true;
+                        }
+                        if (posts[postId].user_id === this.props.currentUser.id && commentsNotifyLevel === 'any' && !isCommentMention) {
+                            for (const nextPostId in posts) {
+                                if (posts[nextPostId].root_id === commentRootId && posts[nextPostId].user_id !== this.props.currentUser.id &&
+                                        posts[postId].create_at < posts[nextPostId].create_at) {
+                                    isCommentMention = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (nonOwnCommentsExists && posts[commentRootId].user_id === this.props.currentUser.id && commentsNotifyLevel !== 'never') {
+                    isCommentMention = true;
                 }
             }
 
@@ -274,6 +296,7 @@ export default class PostList extends React.Component {
                     currentUser={this.props.currentUser}
                     center={this.props.displayPostsInCenter}
                     commentCount={commentCount}
+                    isCommentMention={isCommentMention}
                     compactDisplay={this.props.compactDisplay}
                     previewCollapsed={this.props.previewsCollapsed}
                     useMilitaryTime={this.props.useMilitaryTime}

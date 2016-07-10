@@ -68,6 +68,10 @@ export default class Post extends React.Component {
             return true;
         }
 
+        if (nextProps.isCommentMention !== this.props.isCommentMention) {
+            return true;
+        }
+
         if (nextProps.shouldHighlight !== this.props.shouldHighlight) {
             return true;
         }
@@ -210,6 +214,7 @@ export default class Post extends React.Component {
                                 post={post}
                                 sameRoot={this.props.sameRoot}
                                 commentCount={commentCount}
+                                isCommentMention={this.props.isCommentMention}
                                 handleCommentClick={this.handleCommentClick}
                                 isLastComment={this.props.isLastComment}
                                 sameUser={this.props.sameUser}
@@ -252,6 +257,7 @@ Post.propTypes = {
     compactDisplay: React.PropTypes.bool,
     previewCollapsed: React.PropTypes.string,
     commentCount: React.PropTypes.number,
+    isCommentMention: React.PropTypes.bool,
     useMilitaryTime: React.PropTypes.bool.isRequired,
     emojis: React.PropTypes.object.isRequired
 };
