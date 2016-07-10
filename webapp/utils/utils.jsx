@@ -553,7 +553,10 @@ export function applyTheme(theme) {
 
     if (theme.sidebarTextActiveColor) {
         changeCss('.app__body .sidebar--left .nav-pills__container li.active a, .app__body .sidebar--left .nav-pills__container li.active a:hover, .app__body .sidebar--left .nav-pills__container li.active a:focus, .app__body .modal .settings-modal .nav-pills>li.active a, .app__body .modal .settings-modal .nav-pills>li.active a:hover, .app__body .modal .settings-modal .nav-pills>li.active a:active', 'color:' + theme.sidebarTextActiveColor, 2);
-        changeCss('.app__body .sidebar--left .nav li.active a, .app__body .sidebar--left .nav li.active a:hover, .app__body .sidebar--left .nav li.active a:focus', 'background:' + changeOpacity(theme.sidebarTextActiveColor, 0.1), 1);
+    }
+
+    if (theme.sidebarTextActiveColor && theme.sidebarBg) {
+        changeCss('.app__body .sidebar--left .nav li.active a, .app__body .sidebar--left .nav li.active a:hover, .app__body .sidebar--left .nav li.active a:focus', 'background:' + blendOpacity(theme.sidebarBg, theme.sidebarTextActiveColor, 0.1), 1);
     }
 
     if (theme.sidebarHeaderBg) {
@@ -948,8 +951,8 @@ export function changeColor(colourIn, amt) {
     return rgb;
 }
 
-export function changeOpacity(oldColor, opacity) {
-    var color = oldColor;
+export function hex2rgb(hexColor) {
+    var color = hexColor;
     if (color[0] === '#') {
         color = color.slice(1);
     }
@@ -967,7 +970,23 @@ export function changeOpacity(oldColor, opacity) {
     var g = parseInt(color.substring(2, 4), 16);
     var b = parseInt(color.substring(4, 6), 16);
 
-    return 'rgba(' + r + ',' + g + ',' + b + ',' + opacity + ')';
+    return {r: r, g: g, b: b};
+}
+
+export function blendOpacity(bgColor, fgColor, opacity) {
+    var bg = hex2rgb(bgColor);
+    var fg = hex2rgb(fgColor);
+
+    var r = Math.round((1 - opacity) * bg.r + opacity * fg.r);
+    var g = Math.round((1 - opacity) * bg.g + opacity * fg.g);
+    var b = Math.round((1 - opacity) * bg.b + opacity * fg.b);
+
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+export function changeOpacity(oldColor, opacity) {
+    var color = hex2rgb(oldColor);
+    return 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + opacity + ')';
 }
 
 export function getFullName(user) {
