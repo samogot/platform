@@ -96,7 +96,7 @@ export function setUnreadPost(channelId, postId) {
     } else {
         let unreadPosts = 0;
         for (const otherPostId in posts) {
-            if (posts[otherPostId].create_at < lastViewed) {
+            if (posts[otherPostId].create_at > lastViewed) {
                 unreadPosts += 1;
             }
         }
