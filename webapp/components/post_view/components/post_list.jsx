@@ -15,6 +15,8 @@ import * as Utils from 'utils/utils.jsx';
 import * as PostUtils from 'utils/post_utils.jsx';
 import DelayedAction from 'utils/delayed_action.jsx';
 
+import * as ChannelActions from 'actions/channel_actions.jsx';
+
 import Constants from 'utils/constants.jsx';
 const ScrollTypes = Constants.ScrollTypes;
 
@@ -37,6 +39,7 @@ export default class PostList extends React.Component {
         this.handleResize = this.handleResize.bind(this);
         this.scrollToBottom = this.scrollToBottom.bind(this);
         this.scrollToBottomAnimated = this.scrollToBottomAnimated.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
 
         this.jumpToPostNode = null;
         this.wasAtBottom = true;
@@ -54,6 +57,13 @@ export default class PostList extends React.Component {
             isScrolling: false,
             topPostId: null
         };
+    }
+
+    handleKeyDown(e) {
+        if (e.which === Constants.KeyCodes.ESCAPE && $('.popover.in,.modal.in').length === 0) {
+            e.preventDefault();
+            ChannelActions.setChannelAsRead();
+        }
     }
 
     isAtBottom() {
@@ -292,7 +302,7 @@ export default class PostList extends React.Component {
                 );
             }
 
-            if (postUserId !== userId &&
+            if ((postUserId !== userId || this.props.ownNewMessage) &&
                     this.props.lastViewed !== 0 &&
                     post.create_at > this.props.lastViewed &&
                     !renderedLastViewed) {
@@ -412,10 +422,12 @@ export default class PostList extends React.Component {
         }
 
         window.addEventListener('resize', this.handleResize);
+        window.addEventListener('keydown', this.handleKeyDown);
     }
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.handleResize);
+        window.removeEventListener('keydown', this.handleKeyDown);
         this.scrollStopAction.cancel();
     }
 
@@ -510,7 +522,8 @@ export default class PostList extends React.Component {
 }
 
 PostList.defaultProps = {
-    lastViewed: 0
+    lastViewed: 0,
+    ownNewMessage: false
 };
 
 PostList.propTypes = {
@@ -524,6 +537,7 @@ PostList.propTypes = {
     showMoreMessagesTop: React.PropTypes.bool,
     showMoreMessagesBottom: React.PropTypes.bool,
     lastViewed: React.PropTypes.number,
+    ownNewMessage: React.PropTypes.bool,
     postsToHighlight: React.PropTypes.object,
     displayNameType: React.PropTypes.string,
     displayPostsInCenter: React.PropTypes.bool,
