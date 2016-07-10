@@ -208,7 +208,7 @@ function handlePostEditEvent(msg) {
     // Update channel state
     if (ChannelStore.getCurrentId() === msg.channel_id) {
         if (window.isActive) {
-            AsyncClient.updateLastViewedAt();
+            GlobalActions.updateOnScreenLastViewedAt();
         }
     }
 }

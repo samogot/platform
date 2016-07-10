@@ -365,12 +365,10 @@ var ChannelStore = new ChannelStoreClass();
 
 ChannelStore.dispatchToken = AppDispatcher.register((payload) => {
     var action = payload.action;
-    var currentId;
 
     switch (action.type) {
     case ActionTypes.CLICK_CHANNEL:
         ChannelStore.setCurrentId(action.id);
-        ChannelStore.resetCounts(action.id);
         ChannelStore.setPostMode(ChannelStore.POST_MODE_CHANNEL);
         ChannelStore.emitChange();
         break;
@@ -386,10 +384,6 @@ ChannelStore.dispatchToken = AppDispatcher.register((payload) => {
     case ActionTypes.RECEIVED_CHANNELS:
         ChannelStore.storeChannels(action.channels);
         ChannelStore.storeChannelMembers(action.members);
-        currentId = ChannelStore.getCurrentId();
-        if (currentId && window.isActive) {
-            ChannelStore.resetCounts(currentId);
-        }
         ChannelStore.setUnreadCounts();
         ChannelStore.emitChange();
         break;
@@ -398,10 +392,6 @@ ChannelStore.dispatchToken = AppDispatcher.register((payload) => {
         ChannelStore.pStoreChannel(action.channel);
         if (action.member) {
             ChannelStore.pStoreChannelMember(action.member);
-        }
-        currentId = ChannelStore.getCurrentId();
-        if (currentId && window.isActive) {
-            ChannelStore.resetCounts(currentId);
         }
         ChannelStore.setUnreadCount(action.channel.id);
         ChannelStore.emitChange();
