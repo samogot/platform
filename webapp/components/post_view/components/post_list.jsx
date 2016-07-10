@@ -12,7 +12,7 @@ import TeamStore from 'stores/team_store.jsx';
 
 import * as GlobalActions from 'actions/global_actions.jsx';
 
-import {createChannelIntroMessage} from 'utils/channel_intro_messages.jsx';S
+import {createChannelIntroMessage} from 'utils/channel_intro_messages.jsx';
 
 import * as Utils from 'utils/utils.jsx';
 import * as PostUtils from 'utils/post_utils.jsx';
